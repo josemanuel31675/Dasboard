@@ -6,9 +6,13 @@
     <title>Visionary Dashboard | Admin Panel</title>
     <!-- Google Fonts: Outfit -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js for stunning visuals -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- Versioned Minified Styles -->
+    <link rel="stylesheet" href="style.min.css?v=1.0.4">
+    
+    <style>
+        [v-cloak] { display: none !important; }
+    </style>
 </head>
 <body>
     <div id="app" class="app-container" v-cloak>
@@ -73,12 +77,12 @@
 
             <!-- Charts & Tables -->
             <div class="content-grid">
-                <div class="chart-container glass-card" style="position: relative; height: 400px;">
+                <div class="chart-container glass-card" style="position: relative; height: 380px;">
                     <div class="card-header">
                         <h3>Visit Trends (Live)</h3>
                         <div class="dot green" v-if="loading"></div>
                     </div>
-                    <div class="chart-wrapper" style="position: relative; height: calc(100% - 60px);">
+                    <div class="chart-body" style="position: relative; height: 280px;">
                         <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
@@ -96,7 +100,7 @@
                                 <span>{{ formatTime(act.date) }}</span>
                             </div>
                         </div>
-                        <div v-if="filteredActivity.length === 0" class="no-data">
+                        <div v-if="filteredActivity.length === 0" class="no-data" style="text-align: center; color: var(--text-dim); margin-top: 20px;">
                             No recent activity found.
                         </div>
                     </div>
@@ -108,6 +112,8 @@
     <!-- Vue 3 & Chart.js -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="dashboard.js"></script>
+    
+    <!-- Versioned Minified JS -->
+    <script src="dashboard.min.js?v=1.0.4"></script>
 </body>
 </html>
