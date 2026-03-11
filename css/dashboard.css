@@ -143,3 +143,47 @@
 .dot.blue { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
 .dot.purple { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
 .dot.green { background: var(--success); box-shadow: 0 0 10px var(--success); }
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 5px;
+    background: var(--glass);
+    padding: 3px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.chart-controls button {
+    background: none;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    color: var(--text-dim);
+}
+
+.chart-controls button.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 0 10px var(--primary);
+}
+
+.chart-controls button:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}

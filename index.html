@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- Versioned Minified Styles -->
-    <link rel="stylesheet" href="style.min.css?v=1.0.5">
+    <link rel="stylesheet" href="style.min.css?v=1.0.6">
     
     <style>
         [v-cloak] { display: none !important; }
@@ -93,12 +93,20 @@
 
             <!-- Charts & Tables -->
             <div class="content-grid">
-                <div class="chart-container glass-card" style="position: relative; height: 380px;">
+                <div class="chart-container glass-card" style="position: relative; height: 420px;">
                     <div class="card-header">
-                        <h3>Visit Trends (Live)</h3>
-                        <div class="dot green" v-if="loading"></div>
+                        <div class="header-left">
+                            <h3>Visit Trends (Live)</h3>
+                            <div class="dot green" v-if="loading"></div>
+                        </div>
+                        <!-- Chart Type Selector -->
+                        <div class="chart-controls">
+                            <button @click="setChartType('line')" :class="{ active: chartType === 'line' }">📈</button>
+                            <button @click="setChartType('bar')" :class="{ active: chartType === 'bar' }">📊</button>
+                            <button @click="setChartType('pie')" :class="{ active: chartType === 'pie' }">🥧</button>
+                        </div>
                     </div>
-                    <div class="chart-body" style="position: relative; height: 280px;">
+                    <div class="chart-body" style="position: relative; height: 300px;">
                         <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
@@ -130,6 +138,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Versioned Minified JS -->
-    <script src="dashboard.min.js?v=1.0.5"></script>
+    <script src="dashboard.min.js?v=1.0.6"></script>
 </body>
 </html>

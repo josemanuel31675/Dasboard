@@ -10,6 +10,7 @@ createApp({
         const activeMenu = ref("Dashboard");
         const performanceStatus = ref("Excellent");
         const activity = ref([]);
+        const chartType = ref("line");
         
         // --- THEMES ---
         const currentTheme = ref(localStorage.getItem('visionary-theme') || 'dark');
@@ -23,6 +24,12 @@ createApp({
             currentTheme.value = themeId;
             localStorage.setItem('visionary-theme', themeId);
             document.body.className = `theme-${themeId}`;
+        };
+
+        const setChartType = (type) => {
+            chartType.value = type;
+            initChart(); // Re-initialize with new type
+            syncData();  // Refresh data for the new visual
         };
 
         const stats = ref([
@@ -69,7 +76,13 @@ createApp({
 
                 if (chart) {
                     const base = (data.stats.visits || 100) / 10;
-                    chart.data.datasets[0].data = Array.from({length: 7}, () => Math.floor(base + Math.random() * base));
+                    const newData = Array.from({length: 7}, () => Math.floor(base + Math.random() * base));
+                    
+                    if (chartType.value === 'pie') {
+                        chart.data.datasets[0].data = newData;
+                    } else {
+                        chart.data.datasets[0].data = newData;
+                    }
                     chart.update();
                 }
             } catch (e) {
@@ -82,33 +95,51 @@ createApp({
         const initChart = () => {
             const canvas = document.getElementById('performanceChart');
             if (!canvas) return;
+            
+            // Destroy existing chart to change type
+            if (chart) chart.destroy();
+
             const ctx = canvas.getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, 'rgba(0, 210, 255, 0.5)');
-            gradient.addColorStop(1, 'rgba(0, 210, 255, 0)');
+            const type = chartType.value;
+            
+            // Styliing based on type
+            let bg = 'rgba(0, 210, 255, 0.2)';
+            let border = '#00d2ff';
+            
+            if (type === 'line') {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(0, 210, 255, 0.5)');
+                gradient.addColorStop(1, 'rgba(0, 210, 255, 0)');
+                bg = gradient;
+            } else if (type === 'pie') {
+                bg = ['#00d2ff', '#9d50bb', '#ff8c00', '#10b981', '#ef4444', '#6366f1', '#f59e0b'];
+                border = 'transparent';
+            }
 
             chart = new Chart(ctx, {
-                type: 'line',
+                type: type,
                 data: {
                     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                     datasets: [{
                         label: 'Visits',
                         data: [65, 80, 70, 95, 85, 110, 130],
-                        borderColor: '#00d2ff',
-                        backgroundColor: gradient,
-                        fill: true,
+                        borderColor: border,
+                        backgroundColor: bg,
+                        fill: type === 'line',
                         tension: 0.4,
-                        borderWidth: 3,
+                        borderWidth: type === 'pie' ? 0 : 3,
                         pointRadius: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { display: type === 'pie', position: 'bottom', labels: { color: '#94a3b8' } } 
+                    },
                     scales: {
-                        y: { display: false },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        y: { display: type !== 'pie', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { display: type !== 'pie', grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
@@ -125,7 +156,8 @@ createApp({
             loading, searchQuery, activeMenu, stats, 
             menuItems, filteredActivity, formatTime, 
             syncData, performanceStatus,
-            currentTheme, themes, setTheme
+            currentTheme, themes, setTheme,
+            chartType, setChartType
         };
     }
 }).mount('#app');
