@@ -11,19 +11,46 @@
     margin-bottom: 3rem;
 }
 
-/* Theme Switcher */
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Theme Menu */
+.theme-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 20px;
+    border-right: 1px solid var(--glass-border);
+}
+
+.theme-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
 .theme-switcher {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     background: var(--glass);
-    padding: 6px;
+    padding: 4px;
     border-radius: 20px;
     border: 1px solid var(--glass-border);
 }
 
 .theme-btn {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border: 2px solid transparent;
     background: none;
@@ -35,19 +62,19 @@
 }
 
 .theme-btn span {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     display: block;
 }
 
 .theme-btn.active {
     border-color: var(--primary);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
 }
 
 .theme-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .search-box input {

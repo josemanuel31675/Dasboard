@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- Versioned Minified Styles -->
-    <link rel="stylesheet" href="style.min.css?v=1.0.4">
+    <link rel="stylesheet" href="style.min.css?v=1.0.5">
     
     <style>
         [v-cloak] { display: none !important; }
@@ -46,19 +46,24 @@
                     <input type="text" v-model="searchQuery" placeholder="Search insights...">
                 </div>
                 <div class="top-actions">
-                    <!-- Theme Switcher -->
-                    <div class="theme-switcher">
-                        <button v-for="t in themes" 
-                                :key="t.id"
-                                :class="['theme-btn', { active: currentTheme === t.id }]"
-                                @click="setTheme(t.id)"
-                                :title="t.name">
-                            <span :style="{ backgroundColor: t.color }"></span>
-                        </button>
+                    <!-- Improved Theme Switcher -->
+                    <div class="theme-menu">
+                        <span class="theme-label">🎨 Appearance</span>
+                        <div class="theme-switcher">
+                            <button v-for="t in themes" 
+                                    :key="t.id"
+                                    :class="['theme-btn', { active: currentTheme === t.id }]"
+                                    @click="setTheme(t.id)"
+                                    :title="t.name">
+                                <span :style="{ backgroundColor: t.color }"></span>
+                            </button>
+                        </div>
                     </div>
                     
-                    <button class="notif-btn">🔔<span class="badge">3</span></button>
-                    <button class="btn-primary" @click="syncData">🔄 Refresh Data</button>
+                    <div class="action-buttons">
+                        <button class="notif-btn">🔔<span class="badge">3</span></button>
+                        <button class="btn-primary" @click="syncData">🔄 Refresh Data</button>
+                    </div>
                 </div>
             </header>
 
@@ -125,6 +130,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Versioned Minified JS -->
-    <script src="dashboard.min.js?v=1.0.4"></script>
+    <script src="dashboard.min.js?v=1.0.5"></script>
 </body>
 </html>
