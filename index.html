@@ -69,85 +69,199 @@
                 </div>
             </header>
 
-            <section class="dashboard-header">
-                <div class="welcome-text">
-                    <h1>Market Insights</h1>
-                    <p>Global crypto sentiment is currently <strong :style="{ color: performanceStatus === 'Bullish' ? 'var(--success)' : 'var(--danger)' }">{{ performanceStatus }}</strong>.</p>
-                </div>
-                <div class="date-filter">
-                    <button class="filter-btn active">Live Terminal</button>
-                </div>
-            </section>
+            <!-- Dashboard View -->
+            <div v-if="activeMenu === 'Dashboard'">
+                <section class="dashboard-header">
+                    <div class="welcome-text">
+                        <h1>Market Insights</h1>
+                        <p>Global crypto sentiment is currently <strong :style="{ color: performanceStatus === 'Bullish' ? 'var(--success)' : 'var(--danger)' }">{{ performanceStatus }}</strong>.</p>
+                    </div>
+                </section>
 
-            <!-- Stat Cards -->
-            <div class="stats-grid">
-                <div class="stat-card" v-for="stat in stats" :key="stat.label">
-                    <div :class="['stat-icon', stat.class]">{{ stat.icon }}</div>
-                    <div class="stat-info">
-                        <p class="label">{{ stat.label }}</p>
-                        <h2 class="value">{{ stat.value }}</h2>
-                        <span class="trend positive" v-if="stat.label.includes('Cap')">Global Value</span>
-                        <span class="trend" v-else>Live Analytics</span>
+                <div class="stats-grid">
+                    <div class="stat-card" v-for="stat in stats" :key="stat.label">
+                        <div :class="['stat-icon', stat.class]">{{ stat.icon }}</div>
+                        <div class="stat-info">
+                            <p class="label">{{ stat.label }}</p>
+                            <h2 class="value">{{ stat.value }}</h2>
+                            <span class="trend positive" v-if="stat.label.includes('Cap')">Global Value</span>
+                            <span class="trend" v-else>Live Analytics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="chart-container glass-card" style="position: relative; height: 420px;">
+                        <div class="card-header">
+                            <div class="header-left">
+                                <h3>Asset Price Comparison (USD)</h3>
+                                <div class="dot green" v-if="loading"></div>
+                            </div>
+                            <div class="chart-controls">
+                                <button @click="setChartType('line')" :class="{ active: chartType === 'line' }">📈</button>
+                                <button @click="setChartType('bar')" :class="{ active: chartType === 'bar' }">📊</button>
+                                <button @click="setChartType('pie')" :class="{ active: chartType === 'pie' }">🥧</button>
+                            </div>
+                        </div>
+                        <div class="chart-body" style="position: relative; height: 300px;">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-activity glass-card">
+                        <div class="card-header">
+                            <h3>Market Intelligence</h3>
+                            <span class="view-all">MXN Rate: {{ mxnRate.toFixed(2) }}</span>
+                        </div>
+
+                        <div class="quick-converter">
+                            <p class="tool-label">💸 MXN Converter</p>
+                            <div class="converter-inputs">
+                                <input type="number" v-model.number="converter.amount" placeholder="Amount">
+                                <select v-model="converter.coinPrice">
+                                    <option v-for="coin in marketData" :key="coin.id" :value="coin.current_price">
+                                        {{ coin.symbol.toUpperCase() }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="converter-result">
+                                <p class="res-val">{{ formatCurrency(converter.amount * converter.coinPrice * mxnRate, 'MXN') }}</p>
+                                <span>Estimated Value</span>
+                            </div>
+                        </div>
+
+                        <div class="activity-list">
+                            <div class="activity-item" v-for="coin in filteredActivity" :key="coin.id">
+                                <img :src="coin.image" style="width: 24px; border-radius: 50%;">
+                                <div class="details">
+                                    <p><strong>{{ coin.name }}</strong> ({{ coin.symbol.toUpperCase() }})</p>
+                                    <p style="font-size: 0.9rem; color: var(--text-main)">{{ formatCurrency(coin.current_price) }}</p>
+                                    <span :class="['trend', coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative']">
+                                        {{ coin.price_change_percentage_24h.toFixed(2) }}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts & Tables -->
-            <div class="content-grid">
-                <div class="chart-container glass-card" style="position: relative; height: 420px;">
-                    <div class="card-header">
-                        <div class="header-left">
-                            <h3>Asset Price Comparison (USD)</h3>
-                            <div class="dot green" v-if="loading"></div>
-                        </div>
-                        <!-- Chart Type Selector -->
-                        <div class="chart-controls">
-                            <button @click="setChartType('line')" :class="{ active: chartType === 'line' }">📈</button>
-                            <button @click="setChartType('bar')" :class="{ active: chartType === 'bar' }">📊</button>
-                            <button @click="setChartType('pie')" :class="{ active: chartType === 'pie' }">🥧</button>
+            <!-- Exchange View -->
+            <div v-if="activeMenu === 'Exchange'">
+                <section class="dashboard-header">
+                    <h1>Top Exchanges</h1>
+                    <p>Verified cryptocurrency exchanges by trust score.</p>
+                </section>
+                <div class="glass-card">
+                    <table class="exchange-table">
+                        <thead>
+                            <tr>
+                                <th>Exchange</th>
+                                <th>Trust Rank</th>
+                                <th>24h Volume (normalized)</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="ex in exchanges" :key="ex.id">
+                                <td class="item-name">
+                                    <img :src="ex.image" width="20">
+                                    {{ ex.name }}
+                                </td>
+                                <td>
+                                    <span :class="['trust-badge', ex.trust_score >= 8 ? 'high' : 'med']">
+                                        {{ ex.trust_score }}/10
+                                    </span>
+                                </td>
+                                <td>{{ formatCurrency(ex.trade_volume_24h_btc_normalized) }} BTC</td>
+                                <td><a :href="ex.url" target="_blank" class="view-all">Visit &rarr;</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Portfolio View -->
+            <div v-if="activeMenu === 'Portfolio'">
+                <section class="dashboard-header">
+                    <h1>My Portfolio</h1>
+                    <p>Current holdings and performance analysis.</p>
+                </section>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left: 4px solid var(--primary)">
+                        <div class="stat-info">
+                            <p class="label">Total Balance</p>
+                            <h2>$12,450.00</h2>
+                            <span class="trend positive">+5.2% Today</span>
                         </div>
                     </div>
-                    <div class="chart-body" style="position: relative; height: 300px;">
-                        <canvas id="performanceChart"></canvas>
+                    <div class="stat-card" style="border-left: 4px solid var(--success)">
+                        <div class="stat-info">
+                            <p class="label">Total Profit</p>
+                            <h2>+$2,105.40</h2>
+                            <span class="trend positive">Lifetime</span>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="recent-activity glass-card">
-                    <div class="card-header">
-                        <h3>Market Intelligence</h3>
-                        <span class="view-all">MXN Rate: {{ mxnRate.toFixed(2) }}</span>
-                    </div>
-
-                    <!-- Quick Converter -->
-                    <div class="quick-converter">
-                        <p class="tool-label">💸 MXN Converter</p>
-                        <div class="converter-inputs">
-                            <input type="number" v-model.number="converter.amount" placeholder="Amount">
-                            <select v-model="converter.coinPrice">
-                                <option v-for="coin in marketData" :key="coin.id" :value="coin.current_price">
-                                    {{ coin.symbol.toUpperCase() }}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="converter-result">
-                            <p class="res-val">{{ formatCurrency(converter.amount * converter.coinPrice * mxnRate, 'MXN') }}</p>
-                            <span>Estimated Value</span>
-                        </div>
-                    </div>
-
-                    <div class="activity-list">
-                        <div class="activity-item" v-for="coin in filteredActivity" :key="coin.id">
-                            <img :src="coin.image" style="width: 24px; border-radius: 50%;">
-                            <div class="details">
-                                <p><strong>{{ coin.name }}</strong> ({{ coin.symbol.toUpperCase() }})</p>
-                                <p style="font-size: 0.9rem; color: var(--text-main)">{{ formatCurrency(coin.current_price) }}</p>
-                                <span :class="['trend', coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative']">
-                                    {{ coin.price_change_percentage_24h.toFixed(2) }}% (24h)
-                                </span>
+                <div class="glass-card">
+                    <h3>Holdings Distribution</h3>
+                    <div class="portfolio-list">
+                        <div v-for="item in portfolio" :key="item.id" class="portfolio-item">
+                            <div class="asset-info">
+                                <div class="asset-dot" :style="{ background: item.color }"></div>
+                                <div>
+                                    <p class="name">{{ item.name }}</p>
+                                    <p class="amount">{{ item.amount }} {{ item.symbol.toUpperCase() }}</p>
+                                </div>
+                            </div>
+                            <div class="asset-values" style="text-align: right;">
+                                <p class="val">{{ formatCurrency(item.amount * 45000) }}</p> <!-- Mock price math -->
+                                <p class="profit positive">+12%</p>
                             </div>
                         </div>
-                        <div v-if="filteredActivity.length === 0" class="no-data" style="text-align: center; color: var(--text-dim); margin-top: 20px;">
-                            No market data found.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div v-if="activeMenu === 'Settings'">
+                <section class="dashboard-header">
+                    <h1>General Settings</h1>
+                    <p>Customize your dashboard experience.</p>
+                </section>
+                <div class="content-grid">
+                    <div class="glass-card">
+                        <h3>🎨 Visual Preferences</h3>
+                        <div class="settings-group">
+                            <p class="label">Active Theme</p>
+                            <div class="theme-selection-grid">
+                                <div v-for="t in themes" 
+                                     :key="t.id" 
+                                     :class="['theme-option', { active: currentTheme === t.id }]"
+                                     @click="setTheme(t.id)">
+                                    <span class="color-preview" :style="{ background: t.color }"></span>
+                                    <p>{{ t.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <h3>🛠️ System Configuration</h3>
+                        <div class="settings-group">
+                            <div class="setting-item">
+                                <span>Auto-refresh Data (5m)</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Show Market Sentiment</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>

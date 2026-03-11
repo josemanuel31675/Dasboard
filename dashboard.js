@@ -71,22 +71,33 @@ createApp({
             }).format(val);
         };
 
+        const exchanges = ref([]);
+        const portfolio = ref([
+            { id: 1, name: 'Bitcoin', symbol: 'btc', amount: 0.25, avgPrice: 42000, color: '#f7931a' },
+            { id: 2, name: 'Ethereum', symbol: 'eth', amount: 1.5, avgPrice: 2200, color: '#627eea' },
+            { id: 3, name: 'Tether', symbol: 'usdt', amount: 500, avgPrice: 1, color: '#26a17b' }
+        ]);
+
         const updateDashboard = async () => {
             if (loading.value) return;
             loading.value = true;
             try {
-                // Fetch Prices & Global Info
-                const requests = [fetch(COINGECKO_URL), fetch(GLOBAL_URL)];
+                // Fetch Prices, Global Info & Exchanges
+                const requests = [
+                    fetch(COINGECKO_URL), 
+                    fetch(GLOBAL_URL),
+                    fetch("https://api.coingecko.com/api/v3/exchanges?per_page=10&page=1")
+                ];
                 const responses = await Promise.all(requests.map(p => p.catch(e => ({ error: true, message: e.message }))));
                 
-                const [pricesRes, globalRes] = responses;
+                const [pricesRes, globalRes, exchangesRes] = responses;
 
                 if (pricesRes.error || globalRes.error) {
                     throw new Error("Network error or request blocked (CORS/Adblock)");
                 }
 
                 if (pricesRes.status === 429 || globalRes.status === 429) {
-                    console.warn("CoinGecko Rate Limit reached. Using cached data.");
+                    console.warn("CoinGecko Rate Limit reached.");
                     loading.value = false;
                     return;
                 }
@@ -94,6 +105,10 @@ createApp({
                 const prices = await pricesRes.json();
                 const global = await globalRes.json();
                 const gData = global.data;
+                
+                if (!exchangesRes.error && exchangesRes.ok) {
+                    exchanges.value = await exchangesRes.json();
+                }
 
                 marketData.value = prices;
                 
@@ -197,7 +212,8 @@ createApp({
             syncData: updateDashboard, performanceStatus,
             currentTheme, themes, setTheme,
             chartType, setChartType,
-            mxnRate, converter, marketData
+            mxnRate, converter, marketData,
+            exchanges, portfolio
         };
     }
 }).mount('#app');
