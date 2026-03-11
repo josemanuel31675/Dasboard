@@ -76,11 +76,15 @@ createApp({
             loading.value = true;
             try {
                 // Fetch Prices & Global Info
-                const [pricesRes, globalRes] = await Promise.all([
-                    fetch(COINGECKO_URL),
-                    fetch(GLOBAL_URL)
-                ]);
+                const requests = [fetch(COINGECKO_URL), fetch(GLOBAL_URL)];
+                const responses = await Promise.all(requests.map(p => p.catch(e => ({ error: true, message: e.message }))));
                 
+                const [pricesRes, globalRes] = responses;
+
+                if (pricesRes.error || globalRes.error) {
+                    throw new Error("Network error or request blocked (CORS/Adblock)");
+                }
+
                 if (pricesRes.status === 429 || globalRes.status === 429) {
                     console.warn("CoinGecko Rate Limit reached. Using cached data.");
                     loading.value = false;
