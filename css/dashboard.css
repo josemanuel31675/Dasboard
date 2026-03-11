@@ -144,6 +144,57 @@
 .dot.purple { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
 .dot.green { background: var(--success); box-shadow: 0 0 10px var(--success); }
 
+/* Quick Converter */
+.quick-converter {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+.tool-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.converter-inputs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.converter-inputs input, .converter-inputs select {
+    background: var(--bg-main);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: 100%;
+    outline: none;
+}
+
+.converter-result {
+    text-align: center;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.res-val {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.converter-result span {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;

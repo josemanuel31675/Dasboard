@@ -1,16 +1,23 @@
-// Forzar carga limpia de Vue
 const { createApp, ref, onMounted, computed } = Vue;
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcKxPLUm13QWQBV9sOaymcUOhwrb6F350CEgikiolcIxAp2k4rEjj2GmYwN8lPpAEa/exec";
+const COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=7&page=1&sparkline=false&price_change_percentage=24h";
+const GLOBAL_URL = "https://api.coingecko.com/api/v3/global";
 
 createApp({
     setup() {
         const loading = ref(false);
         const searchQuery = ref("");
         const activeMenu = ref("Dashboard");
-        const performanceStatus = ref("Excellent");
-        const activity = ref([]);
-        const chartType = ref("line");
+        const performanceStatus = ref("Market Live");
+        const marketData = ref([]);
+        const chartType = ref("bar");
+        const mxnRate = ref(17.00); // Fallback rate
+        
+        const converter = ref({
+            amount: 1,
+            coinPrice: 0,
+            result: 0
+        });
         
         // --- THEMES ---
         const currentTheme = ref(localStorage.getItem('visionary-theme') || 'dark');
@@ -28,65 +35,86 @@ createApp({
 
         const setChartType = (type) => {
             chartType.value = type;
-            initChart(); // Re-initialize with new type
-            syncData();  // Refresh data for the new visual
+            initChart();
+            updateDashboard();
         };
 
         const stats = ref([
-            { label: "Total Page Visits", value: 0, trend: 12.5, icon: "💰", class: "revenue" },
-            { label: "Total Questions", value: 0, trend: 5.2, icon: "👥", class: "users" },
-            { label: "Unanswered", value: 0, trend: -1.4, icon: "🎯", class: "tasks" },
-            { label: "Avg. Session", value: 12.7, trend: 2.1, icon: "⏱️", class: "sessions" }
+            { label: "Market Cap (TRI)", value: 0, trend: 0, icon: "🌎", class: "revenue" },
+            { label: "24h Volume (BN)", value: 0, trend: 0, icon: "📊", class: "users" },
+            { label: "BTC Dominance", value: 0, trend: 0, icon: "₿", class: "tasks" },
+            { label: "Active Cryptos", value: 0, trend: 0, icon: "🪙", class: "sessions" }
         ]);
 
         const menuItems = ref([
             { name: "Dashboard", icon: "📊" },
-            { name: "Analytics", icon: "📈" },
-            { name: "Chat Logs", icon: "💬" },
+            { name: "Exchange", icon: "💱" },
+            { name: "Portfolio", icon: "💼" },
             { name: "Settings", icon: "⚙️" }
         ]);
 
         let chart = null;
 
         const filteredActivity = computed(() => {
-            if (!searchQuery.value) return activity.value;
+            if (!searchQuery.value) return marketData.value;
             const q = searchQuery.value.toLowerCase();
-            return activity.value.filter(a => 
-                (a.content && a.content.toLowerCase().includes(q)) || 
-                a.type.toLowerCase().includes(q)
+            return marketData.value.filter(a => 
+                a.name.toLowerCase().includes(q) || a.symbol.toLowerCase().includes(q)
             );
         });
 
-        const formatTime = (dateStr) => {
-            if (!dateStr) return "Just now";
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const formatCurrency = (val, currency = 'USD') => {
+            return new Intl.NumberFormat('en-US', { 
+                style: 'currency', 
+                currency: currency, 
+                minimumFractionDigits: currency === 'USD' ? 0 : 2 
+            }).format(val);
         };
 
-        const syncData = async () => {
+        const updateDashboard = async () => {
             loading.value = true;
             try {
-                const res = await fetch(`${GOOGLE_SCRIPT_URL}?cb=${Date.now()}`);
-                const data = await res.json();
+                // Fetch Prices, Global Info & Exchange Rate (BTC in USD vs MXN)
+                const [pricesRes, globalRes, ratesRes] = await Promise.all([
+                    fetch(COINGECKO_URL),
+                    fetch(GLOBAL_URL),
+                    fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,mxn")
+                ]);
                 
-                // Protección contra datos nulos o malformados
-                const currentStats = data.stats || { visits: 0, questions: 0, unanswered: 0 };
+                const prices = await pricesRes.json();
+                const global = await globalRes.json();
+                const rates = await ratesRes.json();
+                const gData = global.data;
+
+                marketData.value = prices;
                 
-                stats.value[0].value = currentStats.visits || 0;
-                stats.value[1].value = currentStats.questions || 0;
-                stats.value[2].value = currentStats.unanswered || 0;
-                activity.value = data.activity || [];
+                // Derive USD/MXN rate from BTC prices
+                if (rates.bitcoin) {
+                    mxnRate.value = rates.bitcoin.mxn / rates.bitcoin.usd;
+                }
+
+                // Update Stats
+                stats.value[0].value = (gData.total_market_cap.usd / 1e12).toFixed(2);
+                stats.value[1].value = (gData.total_volume.usd / 1e9).toFixed(2);
+                stats.value[2].value = gData.market_cap_percentage.btc.toFixed(1);
+                stats.value[3].value = gData.active_cryptocurrencies;
 
                 if (chart) {
-                    const totalV = currentStats.visits || 100;
-                    const base = totalV / 10;
-                    const newData = Array.from({length: 7}, () => Math.floor(base + Math.random() * base));
-                    
-                    chart.data.datasets[0].data = newData;
+                    chart.data.labels = prices.map(c => c.symbol.toUpperCase());
+                    chart.data.datasets[0].data = prices.map(c => c.current_price);
+                    chart.data.datasets[0].label = 'Price (USD)';
                     chart.update();
                 }
+                
+                performanceStatus.value = gData.market_cap_change_percentage_24h_usd >= 0 ? "Bullish" : "Bearish";
+
+                // Update converter default to BTC if not set
+                if (converter.value.coinPrice === 0 && prices.length > 0) {
+                    converter.value.coinPrice = prices[0].current_price;
+                }
+
             } catch (e) {
-                console.warn("Dashboard Sync (Silent Fallback):", e);
+                console.warn("Market Sync Error:", e);
             } finally {
                 loading.value = false;
             }
@@ -95,14 +123,10 @@ createApp({
         const initChart = () => {
             const canvas = document.getElementById('performanceChart');
             if (!canvas) return;
-            
-            // Destroy existing chart to change type
             if (chart) chart.destroy();
 
             const ctx = canvas.getContext('2d');
             const type = chartType.value;
-            
-            // Styliing based on type
             let bg = 'rgba(0, 210, 255, 0.2)';
             let border = '#00d2ff';
             
@@ -112,23 +136,21 @@ createApp({
                 gradient.addColorStop(1, 'rgba(0, 210, 255, 0)');
                 bg = gradient;
             } else if (type === 'pie') {
-                bg = ['#00d2ff', '#9d50bb', '#ff8c00', '#10b981', '#ef4444', '#6366f1', '#f59e0b'];
+                bg = ['#f7931a', '#627eea', '#26a17b', '#f3ba2f', '#345d9d', '#e84142', '#00d2ff'];
                 border = 'transparent';
             }
 
             chart = new Chart(ctx, {
                 type: type,
                 data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    labels: [],
                     datasets: [{
-                        label: 'Visits',
-                        data: [65, 80, 70, 95, 85, 110, 130],
+                        data: [],
                         borderColor: border,
                         backgroundColor: bg,
                         fill: type === 'line',
                         tension: 0.4,
-                        borderWidth: type === 'pie' ? 0 : 3,
-                        pointRadius: 0
+                        borderWidth: type === 'pie' ? 0 : 3
                     }]
                 },
                 options: {
@@ -148,16 +170,17 @@ createApp({
         onMounted(() => {
             setTheme(currentTheme.value);
             initChart();
-            syncData();
-            setInterval(syncData, 300000); // 5 mins sync
+            updateDashboard();
+            setInterval(updateDashboard, 60000); // 1 min sync for professional feel
         });
 
         return {
             loading, searchQuery, activeMenu, stats, 
-            menuItems, filteredActivity, formatTime, 
-            syncData, performanceStatus,
+            menuItems, filteredActivity, formatCurrency, 
+            syncData: updateDashboard, performanceStatus,
             currentTheme, themes, setTheme,
-            chartType, setChartType
+            chartType, setChartType,
+            mxnRate, converter
         };
     }
 }).mount('#app');

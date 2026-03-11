@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- Versioned Minified Styles -->
-    <link rel="stylesheet" href="style.min.css?v=1.0.6">
+    <link rel="stylesheet" href="style.min.css?v=1.0.9">
     
     <style>
         [v-cloak] { display: none !important; }
@@ -71,11 +71,11 @@
 
             <section class="dashboard-header">
                 <div class="welcome-text">
-                    <h1>Welcome back, José!</h1>
-                    <p>Site performance is currently <strong>{{ performanceStatus }}</strong>.</p>
+                    <h1>Market Insights</h1>
+                    <p>Global crypto sentiment is currently <strong :style="{ color: performanceStatus === 'Bullish' ? 'var(--success)' : 'var(--danger)' }">{{ performanceStatus }}</strong>.</p>
                 </div>
                 <div class="date-filter">
-                    <button class="filter-btn active">Live Tracking</button>
+                    <button class="filter-btn active">Live Terminal</button>
                 </div>
             </section>
 
@@ -85,10 +85,9 @@
                     <div :class="['stat-icon', stat.class]">{{ stat.icon }}</div>
                     <div class="stat-info">
                         <p class="label">{{ stat.label }}</p>
-                        <h2 class="value">{{ stat.value.toLocaleString() }}</h2>
-                        <span :class="['trend', stat.trend >= 0 ? 'positive' : 'negative']">
-                            {{ stat.trend >= 0 ? '+' : '' }}{{ stat.trend }}%
-                        </span>
+                        <h2 class="value">{{ stat.value }}</h2>
+                        <span class="trend positive" v-if="stat.label.includes('Cap')">Global Value</span>
+                        <span class="trend" v-else>Live Analytics</span>
                     </div>
                 </div>
             </div>
@@ -98,7 +97,7 @@
                 <div class="chart-container glass-card" style="position: relative; height: 420px;">
                     <div class="card-header">
                         <div class="header-left">
-                            <h3>Visit Trends (Live)</h3>
+                            <h3>Asset Price Comparison (USD)</h3>
                             <div class="dot green" v-if="loading"></div>
                         </div>
                         <!-- Chart Type Selector -->
@@ -115,19 +114,40 @@
                 
                 <div class="recent-activity glass-card">
                     <div class="card-header">
-                        <h3>Global Activity</h3>
-                        <span class="view-all">{{ filteredActivity.length }} items</span>
+                        <h3>Market Intelligence</h3>
+                        <span class="view-all">MXN Rate: {{ mxnRate.toFixed(2) }}</span>
                     </div>
+
+                    <!-- Quick Converter -->
+                    <div class="quick-converter">
+                        <p class="tool-label">💸 MXN Converter</p>
+                        <div class="converter-inputs">
+                            <input type="number" v-model.number="converter.amount" placeholder="Amount">
+                            <select v-model="converter.coinPrice">
+                                <option v-for="coin in marketData" :key="coin.id" :value="coin.current_price">
+                                    {{ coin.symbol.toUpperCase() }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="converter-result">
+                            <p class="res-val">{{ formatCurrency(converter.amount * converter.coinPrice * mxnRate, 'MXN') }}</p>
+                            <span>Estimated Value</span>
+                        </div>
+                    </div>
+
                     <div class="activity-list">
-                        <div class="activity-item" v-for="(act, index) in filteredActivity" :key="index">
-                            <div :class="['dot', act.type === 'Visit' ? 'blue' : 'purple']"></div>
+                        <div class="activity-item" v-for="coin in filteredActivity" :key="coin.id">
+                            <img :src="coin.image" style="width: 24px; border-radius: 50%;">
                             <div class="details">
-                                <p><strong>{{ act.type }}</strong>: {{ act.content || 'New visit' }}</p>
-                                <span>{{ formatTime(act.date) }}</span>
+                                <p><strong>{{ coin.name }}</strong> ({{ coin.symbol.toUpperCase() }})</p>
+                                <p style="font-size: 0.9rem; color: var(--text-main)">{{ formatCurrency(coin.current_price) }}</p>
+                                <span :class="['trend', coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative']">
+                                    {{ coin.price_change_percentage_24h.toFixed(2) }}% (24h)
+                                </span>
                             </div>
                         </div>
                         <div v-if="filteredActivity.length === 0" class="no-data" style="text-align: center; color: var(--text-dim); margin-top: 20px;">
-                            No recent activity found.
+                            No market data found.
                         </div>
                     </div>
                 </div>
@@ -140,6 +160,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Versioned Minified JS -->
-    <script src="dashboard.min.js?v=1.0.7"></script>
+    <script src="dashboard.min.js?v=1.0.9"></script>
 </body>
 </html>
