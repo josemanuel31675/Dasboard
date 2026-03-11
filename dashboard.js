@@ -193,7 +193,7 @@ createApp({
             syncData: updateDashboard, performanceStatus,
             currentTheme, themes, setTheme,
             chartType, setChartType,
-            mxnRate, converter
+            mxnRate, converter, marketData
         };
     }
 }).mount('#app');
