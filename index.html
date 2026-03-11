@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
+    <div id="app" class="app-container" v-cloak>
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo-section">
@@ -19,11 +19,12 @@
                 <span class="logo-text">Visionary</span>
             </div>
             <nav class="side-nav">
-                <a href="#" class="nav-item active"><i class="icon">📊</i> Dashboard</a>
-                <a href="#" class="nav-item"><i class="icon">📈</i> Analytics</a>
-                <a href="#" class="nav-item"><i class="icon">👥</i> Customers</a>
-                <a href="#" class="nav-item"><i class="icon">💼</i> Projects</a>
-                <a href="#" class="nav-item"><i class="icon">⚙️</i> Settings</a>
+                <a href="#" v-for="item in menuItems" 
+                   :key="item.name" 
+                   :class="['nav-item', { active: activeMenu === item.name }]"
+                   @click="activeMenu = item.name">
+                    <i class="icon">{{ item.icon }}</i> {{ item.name }}
+                </a>
             </nav>
             <div class="user-profile">
                 <img src="https://ui-avatars.com/api/?name=Jose+Manuel&background=00d2ff&color=fff" alt="User">
@@ -38,103 +39,75 @@
         <main class="main-content">
             <header class="top-bar">
                 <div class="search-box">
-                    <input type="text" placeholder="Search insights...">
+                    <input type="text" v-model="searchQuery" placeholder="Search insights...">
                 </div>
                 <div class="top-actions">
                     <button class="notif-btn">🔔<span class="badge">3</span></button>
-                    <button class="btn-primary">+ New Project</button>
+                    <button class="btn-primary" @click="syncData">🔄 Refresh Data</button>
                 </div>
             </header>
 
             <section class="dashboard-header">
                 <div class="welcome-text">
                     <h1>Welcome back, José!</h1>
-                    <p>Here's what's happening with your projects today.</p>
+                    <p>Site performance is currently <strong>{{ performanceStatus }}</strong>.</p>
                 </div>
                 <div class="date-filter">
-                    <button class="filter-btn active">Last 30 Days</button>
-                    <button class="filter-btn">Last 90 Days</button>
+                    <button class="filter-btn active">Live Tracking</button>
                 </div>
             </section>
 
             <!-- Stat Cards -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon revenue">💰</div>
+                <div class="stat-card" v-for="stat in stats" :key="stat.label">
+                    <div :class="['stat-icon', stat.class]">{{ stat.icon }}</div>
                     <div class="stat-info">
-                        <p class="label">Total Revenue</p>
-                        <h2 class="value">$124,592</h2>
-                        <span class="trend positive">+12.5%</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon users">👥</div>
-                    <div class="stat-info">
-                        <p class="label">Active Users</p>
-                        <h2 class="value">8,432</h2>
-                        <span class="trend positive">+5.2%</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon tasks">🎯</div>
-                    <div class="stat-info">
-                        <p class="label">Completion Rate</p>
-                        <h2 class="value">94.2%</h2>
-                        <span class="trend negative">-1.4%</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon sessions">⏱️</div>
-                    <div class="stat-info">
-                        <p class="label">Avg. Session</p>
-                        <h2 class="value">12m 45s</h2>
-                        <span class="trend positive">+2.1%</span>
+                        <p class="label">{{ stat.label }}</p>
+                        <h2 class="value">{{ stat.value.toLocaleString() }}</h2>
+                        <span :class="['trend', stat.trend >= 0 ? 'positive' : 'negative']">
+                            {{ stat.trend >= 0 ? '+' : '' }}{{ stat.trend }}%
+                        </span>
                     </div>
                 </div>
             </div>
 
             <!-- Charts & Tables -->
             <div class="content-grid">
-                <div class="chart-container glass-card">
+                <div class="chart-container glass-card" style="position: relative; height: 400px;">
                     <div class="card-header">
-                        <h3>Performance Over Time</h3>
-                        <button class="more-btn">•••</button>
+                        <h3>Visit Trends (Live)</h3>
+                        <div class="dot green" v-if="loading"></div>
                     </div>
-                    <canvas id="performanceChart"></canvas>
+                    <div class="chart-wrapper" style="position: relative; height: calc(100% - 60px);">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
                 </div>
                 
                 <div class="recent-activity glass-card">
                     <div class="card-header">
-                        <h3>Recent Activity</h3>
-                        <a href="#" class="view-all">View All</a>
+                        <h3>Global Activity</h3>
+                        <span class="view-all">{{ filteredActivity.length }} items</span>
                     </div>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="dot green"></div>
+                        <div class="activity-item" v-for="(act, index) in filteredActivity" :key="index">
+                            <div :class="['dot', act.type === 'Visit' ? 'blue' : 'purple']"></div>
                             <div class="details">
-                                <p><strong>New project</strong> created: 'Cloud Migrator'</p>
-                                <span>2 mins ago</span>
+                                <p><strong>{{ act.type }}</strong>: {{ act.content || 'New visit' }}</p>
+                                <span>{{ formatTime(act.date) }}</span>
                             </div>
                         </div>
-                        <div class="activity-item">
-                            <div class="dot blue"></div>
-                            <div class="details">
-                                <p><strong>Database backup</strong> completed successfully</p>
-                                <span>45 mins ago</span>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="dot purple"></div>
-                            <div class="details">
-                                <p><strong>User login</strong> from Monterrey, MX</p>
-                                <span>2 hours ago</span>
-                            </div>
+                        <div v-if="filteredActivity.length === 0" class="no-data">
+                            No recent activity found.
                         </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <!-- Vue 3 & Chart.js -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

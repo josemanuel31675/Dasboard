@@ -12,6 +12,8 @@
     --danger: #ef4444;
 }
 
+[v-cloak] { display: none; }
+
 * {
     margin: 0;
     padding: 0;
