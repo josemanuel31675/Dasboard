@@ -69,24 +69,24 @@ createApp({
                 const res = await fetch(`${GOOGLE_SCRIPT_URL}?cb=${Date.now()}`);
                 const data = await res.json();
                 
-                stats.value[0].value = data.stats.visits || 0;
-                stats.value[1].value = data.stats.questions || 0;
-                stats.value[2].value = data.stats.unanswered || 0;
+                // Protección contra datos nulos o malformados
+                const currentStats = data.stats || { visits: 0, questions: 0, unanswered: 0 };
+                
+                stats.value[0].value = currentStats.visits || 0;
+                stats.value[1].value = currentStats.questions || 0;
+                stats.value[2].value = currentStats.unanswered || 0;
                 activity.value = data.activity || [];
 
                 if (chart) {
-                    const base = (data.stats.visits || 100) / 10;
+                    const totalV = currentStats.visits || 100;
+                    const base = totalV / 10;
                     const newData = Array.from({length: 7}, () => Math.floor(base + Math.random() * base));
                     
-                    if (chartType.value === 'pie') {
-                        chart.data.datasets[0].data = newData;
-                    } else {
-                        chart.data.datasets[0].data = newData;
-                    }
+                    chart.data.datasets[0].data = newData;
                     chart.update();
                 }
             } catch (e) {
-                console.error("Dashboard Sync Error:", e);
+                console.warn("Dashboard Sync (Silent Fallback):", e);
             } finally {
                 loading.value = false;
             }
