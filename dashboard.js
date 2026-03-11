@@ -72,32 +72,46 @@ createApp({
         };
 
         const updateDashboard = async () => {
+            if (loading.value) return;
             loading.value = true;
             try {
-                // Fetch Prices, Global Info & Exchange Rate (BTC in USD vs MXN)
-                const [pricesRes, globalRes, ratesRes] = await Promise.all([
+                // Fetch Prices & Global Info
+                const [pricesRes, globalRes] = await Promise.all([
                     fetch(COINGECKO_URL),
-                    fetch(GLOBAL_URL),
-                    fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,mxn")
+                    fetch(GLOBAL_URL)
                 ]);
                 
+                if (pricesRes.status === 429 || globalRes.status === 429) {
+                    console.warn("CoinGecko Rate Limit reached. Using cached data.");
+                    loading.value = false;
+                    return;
+                }
+
                 const prices = await pricesRes.json();
                 const global = await globalRes.json();
-                const rates = await ratesRes.json();
                 const gData = global.data;
 
                 marketData.value = prices;
                 
-                // Derive USD/MXN rate from BTC prices
-                if (rates.bitcoin) {
-                    mxnRate.value = rates.bitcoin.mxn / rates.bitcoin.usd;
-                }
+                // Fetch Rate separately to avoid killing the whole update if it fails
+                try {
+                    const ratesRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,mxn");
+                    if (ratesRes.ok) {
+                        const rates = await ratesRes.json();
+                        if (rates.bitcoin) {
+                            mxnRate.value = rates.bitcoin.mxn / rates.bitcoin.usd;
+                        }
+                    }
+                } catch (e) { console.warn("MXN Rate Sync Failed (Silent)"); }
 
-                // Update Stats
-                stats.value[0].value = (gData.total_market_cap.usd / 1e12).toFixed(2);
-                stats.value[1].value = (gData.total_volume.usd / 1e9).toFixed(2);
-                stats.value[2].value = gData.market_cap_percentage.btc.toFixed(1);
-                stats.value[3].value = gData.active_cryptocurrencies;
+                // Update Stats (solo si gData existe)
+                if (gData) {
+                    stats.value[0].value = (gData.total_market_cap.usd / 1e12).toFixed(2);
+                    stats.value[1].value = (gData.total_volume.usd / 1e9).toFixed(2);
+                    stats.value[2].value = gData.market_cap_percentage.btc.toFixed(1);
+                    stats.value[3].value = gData.active_cryptocurrencies;
+                    performanceStatus.value = gData.market_cap_change_percentage_24h_usd >= 0 ? "Bullish" : "Bearish";
+                }
 
                 if (chart) {
                     chart.data.labels = prices.map(c => c.symbol.toUpperCase());
@@ -105,8 +119,6 @@ createApp({
                     chart.data.datasets[0].label = 'Price (USD)';
                     chart.update();
                 }
-                
-                performanceStatus.value = gData.market_cap_change_percentage_24h_usd >= 0 ? "Bullish" : "Bearish";
 
                 // Update converter default to BTC if not set
                 if (converter.value.coinPrice === 0 && prices.length > 0) {
@@ -171,7 +183,8 @@ createApp({
             setTheme(currentTheme.value);
             initChart();
             updateDashboard();
-            setInterval(updateDashboard, 60000); // 1 min sync for professional feel
+            // Aumentamos a 5 minutos para evitar el error 429 (Too Many Requests)
+            setInterval(updateDashboard, 300000); 
         });
 
         return {
