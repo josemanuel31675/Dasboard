@@ -11,6 +11,20 @@ createApp({
         const performanceStatus = ref("Excellent");
         const activity = ref([]);
         
+        // --- THEMES ---
+        const currentTheme = ref(localStorage.getItem('visionary-theme') || 'dark');
+        const themes = ref([
+            { id: 'dark', name: 'Visionary Dark', color: '#00d2ff' },
+            { id: 'light', name: 'Arctic Light', color: '#3b82f6' },
+            { id: 'orange', name: 'Sunset Orange', color: '#ff8c00' }
+        ]);
+
+        const setTheme = (themeId) => {
+            currentTheme.value = themeId;
+            localStorage.setItem('visionary-theme', themeId);
+            document.body.className = `theme-${themeId}`;
+        };
+
         const stats = ref([
             { label: "Total Page Visits", value: 0, trend: 12.5, icon: "💰", class: "revenue" },
             { label: "Total Questions", value: 0, trend: 5.2, icon: "👥", class: "users" },
@@ -101,6 +115,7 @@ createApp({
         };
 
         onMounted(() => {
+            setTheme(currentTheme.value);
             initChart();
             syncData();
             setInterval(syncData, 300000); // 5 mins sync
@@ -109,7 +124,8 @@ createApp({
         return {
             loading, searchQuery, activeMenu, stats, 
             menuItems, filteredActivity, formatTime, 
-            syncData, performanceStatus
+            syncData, performanceStatus,
+            currentTheme, themes, setTheme
         };
     }
 }).mount('#app');

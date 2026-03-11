@@ -1,4 +1,5 @@
-:root {
+/* Theme Definitions */
+body.theme-dark {
     --bg-main: #0a0c10;
     --bg-side: #11141b;
     --glass: rgba(255, 255, 255, 0.03);
@@ -8,6 +9,33 @@
     --accent: #6e48aa;
     --text-main: #ffffff;
     --text-dim: #94a3b8;
+}
+
+body.theme-light {
+    --bg-main: #f8fafc;
+    --bg-side: #ffffff;
+    --glass: rgba(0, 0, 0, 0.02);
+    --glass-border: rgba(0, 0, 0, 0.06);
+    --primary: #3b82f6;
+    --secondary: #8b5cf6;
+    --accent: #6366f1;
+    --text-main: #1e293b;
+    --text-dim: #64748b;
+}
+
+body.theme-orange {
+    --bg-main: #120d0a;
+    --bg-side: #1a1410;
+    --glass: rgba(255, 140, 0, 0.05);
+    --glass-border: rgba(255, 140, 0, 0.15);
+    --primary: #ff8c00;
+    --secondary: #ff4500;
+    --accent: #d35400;
+    --text-main: #fffaf0;
+    --text-dim: #d35400;
+}
+
+:root {
     --success: #10b981;
     --danger: #ef4444;
 }
@@ -25,6 +53,7 @@ body {
     background-color: var(--bg-main);
     color: var(--text-main);
     overflow-x: hidden;
+    transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .app-container {

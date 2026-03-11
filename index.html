@@ -46,6 +46,17 @@
                     <input type="text" v-model="searchQuery" placeholder="Search insights...">
                 </div>
                 <div class="top-actions">
+                    <!-- Theme Switcher -->
+                    <div class="theme-switcher">
+                        <button v-for="t in themes" 
+                                :key="t.id"
+                                :class="['theme-btn', { active: currentTheme === t.id }]"
+                                @click="setTheme(t.id)"
+                                :title="t.name">
+                            <span :style="{ backgroundColor: t.color }"></span>
+                        </button>
+                    </div>
+                    
                     <button class="notif-btn">🔔<span class="badge">3</span></button>
                     <button class="btn-primary" @click="syncData">🔄 Refresh Data</button>
                 </div>
